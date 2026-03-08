@@ -1,0 +1,699 @@
+Prac 1 part 1 OSPF
+
+ospf commands:
+
+Router(config)#router ospf 1
+Router(config-router)#network 10.1.1.0 0.0.0.3 area 1
+Router(config-router)#network 192.168.1.0 0.0.0.255 area 1
+Router(config-router)#area 0 authentication message-digest
+
+Router(config)#interface serial0/1/0
+Router(config-if)#ip ospf 1 area 1
+
+
+to verify
+Router# show ip ospf interface serial0/1/0
+
+
+Prac 1 part 2 NTP
+
+
+Router>en
+Router#config t
+Enter configuration commands, one per line.  End with CNTL/Z.
+Router(config)#ntp server 192.168.1.6 //this will be your servers ip address
+Router(config)#ntp update-calendar
+Router(config)#ntp authenticate
+Router(config)#ntp trusted-key 1
+Router(config)#ntp authentication-key 1 md5 ronak
+Router(config)#service timestamps log datetime msec
+Router(config)#exit
+Router#
+*Mar 04, 12:40:52.4040: SYS-5-CONFIG_I: Configured from console by console
+
+
+Prac 1 part 3 SYSLOG
+
+Router#config t
+Enter configuration commands, one per line.  End with CNTL/Z.
+Router(config)#logging host 192.168.1.6 (this is your servers ip address)
+Router(config)#exit
+Router#
+*Mar 04, 12:44:05.4444: SYS-5-CONFIG_I: Configured from console by console
+*Mar 04, 12:44:05.4444:  %SYS-6-LOGGINGHOST_STARTSTOP: Logging to host 192.168.1.6 port 514 started - CLI initiated
+Router#
+Router#
+Router#
+Router#show clock
+12:45:7.409 UTC Wed Mar 4 2026
+Router#
+
+Prac 1 part 4 ssh connection
+
+Router>en
+Router#config t
+Enter configuration commands, one per line.  End with CNTL/Z.
+Router(config)#ip domain-name ronak.com
+Router(config)#username SSHadmin privilege 15 secret ronak
+Router(config)#line vty 0 4
+Router(config-line)#login local
+Router(config-line)#transport input ssh
+Router(config-line)#exit
+Router(config)#crypto key  zeroize rsa
+% No Signature RSA Keys found in configuration.
+
+Router(config)#hostname R3
+R3(config)#crypto key generate rsa
+The name for the keys will be: R3.ronak.com
+Choose the size of the key modulus in the range of 360 to 4096 for your
+  General Purpose Keys. Choosing a key modulus greater than 512 may take
+  a few minutes.
+
+How many bits in the modulus [512]: 1024
+
+% Generating 1024 bit RSA keys, keys will be non-exportable...[OK]
+
+R3(config)#
+*Mar 1 4:55:52.994: %SSH-5-ENABLED: SSH 1.99 has been enabled
+R3(config)#ip ssh version
+% Incomplete command.
+R3(config)#ip ssh version
+% Incomplete command.
+R3(config)#ip ssh version 2
+R3(config)#
+R3(config)#
+
+
+open a computer command shell
+
+C:\>ssh -l SSHadmin 192.168.3.1 (this will be the above routers address)
+
+--------------------------------------------------------------------------------------------------------------------------------------
+Practical 2 - AAA Authentication 
+
+Router>en
+Router#config t
+Router(config)#username admin secret admin
+Router(config)#aaa new-model
+Router(config)#aaa authentication login default local
+Router(config)#line console 0
+Router(config-line)#login authentication default
+Router(config-line)#end
+Router#
+%SYS-5-CONFIG_I: Configured from console by console
+Router#ex
+Router con0 is now available
+Press RETURN to get started.
+
+User Access Verification
+
+Username: admin
+Password: admin
+Router>
+Router>en
+Router#config t
+Enter configuration commands, one per line.  End with CNTL/Z.
+Router(config)#ip domain-name ronak.com
+Router(config)#username admin2 privilege 15 secret mypass
+Router(config)#line vty 0 4
+Router(config-line)#login local
+AAA is enabled. Command not supported. Use an aaa authentication methodlist 
+Router(config-line)#exit
+Router(config)#crypto key zeroize rsa
+% No Signature RSA Keys found in configuration.
+Router(config)#hostname R1
+
+
+R1(config)#crypto key generate rsa
+The name for the keys will be: R1.ronak.com
+Choose the size of the key modulus in the range of 360 to 4096 for your
+  General Purpose Keys. Choosing a key modulus greater than 512 may take
+  a few minutes.
+
+How many bits in the modulus [512]: 1024
+% Generating 1024 bit RSA keys, keys will be non-exportable...[OK]
+
+R1(config)#*Mar 1 0:18:58.990: %SSH-5-ENABLED: SSH 1.99 has been enabled
+
+In any pc 
+C:\> ssh -l admin2 192.168.1.1
+
+
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Practical 3 : Access Control List
+
+
+Router#
+Router#config t
+Enter configuration commands, one per line.  End with CNTL/Z.
+Router(config)#access-list 100 permit tcp 172.22.34.64 (//pc(66)-router(65)-so(64)) 0.0.0.31 (//subnet mask 4th dig minus 3rd dig)  host 172.22.34.62(//server ka address) eq ftp
+Router(config)#access-list 100 permit icmp 172.22.34.64 0.0.0.31 host 172.22.34.62 
+Router(config)#
+Router(config)#
+Router(config)#interface GigabitEthernet0/1
+Router(config-if)#ip access-group 100 in
+Router(config-if)#
+	
+next step : go to pc 1 and check ftp
+C:/> ftp 172.22.34.62(//server ka address)
+username and pass = cisco
+
+
+Router(config-if)#ip access-list extended HTTP_ONLY
+Router(config-ext-nacl)#permit tcp 172.22.34.96 0.0.0.15 host 172.22.34.62 eq www
+Router(config-ext-nacl)#permit icmp 172.22.34.96 0.0.0.15 host 172.22.34.62 
+Router(config-ext-nacl)#int g0/2
+Router(config-if)#ip access-group HTTP_ONLY (//or HTTP-ONLY) in
+
+Router(config-if)#ip access-group HTTP-ONLY in
+
+next step : go to pc 2 and on web browser go to server 172.22.34.62
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Practical 4 - Configure IP ACLs to Mitigate Attacks.
+
+###to verify ACL
+show ipv6 access-list or
+show access-lists
+
+Step 1 :  configure ssh in all routerss
+	
+R1(config-router)#ex
+R1(config)#ip domain-name ronak.com
+R1(config)#username ronak privilege 15 secret ronak
+R1(config)#line vty 0 4
+R1(config-line)#login local
+R1(config-line)#transport input ssh
+R1(config-line)#exit
+R1(config)#crypto key generate rsa
+The name for the keys will be: R1.ronak.com
+Choose the size of the key modulus in the range of 360 to 4096 for your
+  General Purpose Keys. Choosing a key modulus greater than 512 may take
+  a few minutes.
+
+How many bits in the modulus [512]: 1024
+
+step 2- in the R2 give loopback bcoz one address of 192 is missing
+
+R2(config)#int loopback 0
+
+R2(config-if)#
+%LINK-3-UPDOWN: Interface Loopback0, changed state to down
+
+%LINEPROTO-5-UPDOWN: Line protocol on Interface Loopback0, changed state to up
+
+R2(config-if)#ip address 192.168.2.1 255.255.255.0 or
+R2(config-if)#ip address 192.168.2.0 255.255.255.0
+R2(config-if)#no shut
+R2(config-if)#exit
+R2(config)#
+
+and add this in rip of r1 and r3   192.168.2.1
+
+
+step 3 - configure ACL
+
+
+Enter configuration commands, one per line.  End with CNTL/Z.
+R1(config)#
+R1(config)#access-list 10 permit 192.168.3.3
+R1(config)#access-list 10 deny any
+R1(config)#line vty 0 4
+R1(config-line)#access-class 10 in
+R1(config-line)#
+
+do fall all routers 
+
+now all routers only accessible for SSH via pc C 
+
+
+step 4 - Create a Numbered IP ACL 120 on R1
+
+PC A -> services -> http -> off and https on
+
+and in R1 
+
+
+
+
+R1>
+R1>
+R1>en
+R1#config t
+Enter configuration commands, one per line.  End with CNTL/Z.
+R1(config)#access-list 120 permit udp any host 192.168.1.3 eq domain	
+R1(config)#access-list 120 permit tcp any host 192.168.1.3 eq smtp
+R1(config)#access-list 120 permit tcp any host 192.168.1.3 eq ftp
+R1(config)#access-list 120 permit tcp host 192.168.3.3 host 10.1.1.1 eq 22
+R1(config)#
+R1(config)#
+R1(config)#interface Serial0/1/0
+R1(config-if)#ip access-group 120 in
+R1(config-if)#ex
+R1(config)#
+
+
+go to pc A -> services -> ftp on and create user pass and add and save
+
+create a text file on pc c and send it on pc A:
+
+cmd on pc c :
+
+ftp 192.168.1.3
+put a.txt
+
+step 5 - deny access to https on pc a 
+ go to pc a -> service -> https -> off
+
+
+step 6 - permit pc c to access r3 via ssh
+
+R3>en
+R3#config t
+Enter configuration commands, one per line.  End with CNTL/Z.
+R3(config)#access-list 110 permit ip 192.168.3.0 0.0.0.255 any
+R3(config)#
+
+R3(config)#interface GigabitEthernet0/0
+R3(config-if)#
+R3(config-if)#ip access-group 110 in
+R3(config-if)#access-list 100 permit tcp 10.0.0.0 0.255.255.255 eq 22 host 192.168.3.3
+R3(config)#access-list 100 deny ip 10.0.0.0 0.255.255.255 any
+R3(config)#access-list 100 deny ip 192.168.0.0 0.255.255.255 any
+R3(config)#access-list 100 permit ip any any
+R3(config)#
+R3(config)#
+
+R3(config)#interface Serial0/1/1
+R3(config-if)#
+R3(config-if)#ip access-group 100 in
+R3(config-if)#ex
+R3(config)#
+
+result from pc c do this in cmd - > C:/> ssh -l ronak 192.168.3.1
+
+
+----------------------------------------------------------------------------------------------------
+Practical 5 - ipv6 addressing and ipv6 ACLs
+
+On Router0
+
+enable
+configure terminal
+ipv6 unicast-routing
+
+On Router1
+
+enable
+configure terminal
+ipv6 unicast-routing
+
+This command is compulsory or IPv6 packets will not transfer.
+
+Step 2 – Configure Router0 (Top Router)
+Router0(config)#interface Serial0/1/0
+Router0(config-if)#ipv6 address 2001:DB8:1:A001::1/64
+Router0(config-if)#ipv6 address FE80::1 link-local
+Router0(config-if)#no shutdown
+Step 3 – Configure Router1 (Center Router)
+
+Serial connection to Router0
+
+Router1(config)#interface Serial0/1/0
+Router1(config-if)#ipv6 address 2001:DB8:1:A001::2/64
+Router1(config-if)#ipv6 address FE80::1 link-local
+Router1(config-if)#no shutdown
+
+Left LAN (PC0, PC1)
+
+Router1(config)#interface GigabitEthernet0/0
+Router1(config-if)#ipv6 address 2001:DB8:1:1::1/64
+Router1(config-if)#ipv6 address FE80::1 link-local
+Router1(config-if)#no shutdown
+
+Right LAN (PC2 + Server)
+
+Router1(config)#interface GigabitEthernet0/1
+Router1(config-if)#ipv6 address 2001:DB8:1:2::1/64
+Router1(config-if)#ipv6 address FE80::1 link-local
+Router1(config-if)#no shutdown
+Step 4 – Configure IPv6 on PCs
+PC0
+IPv6 Address: 2001:DB8:1:1::2
+Prefix: /64
+Gateway: 2001:DB8:1:1::1
+PC1
+IPv6 Address: 2001:DB8:1:1::3
+Prefix: /64
+Gateway: 2001:DB8:1:1::1
+PC2
+IPv6 Address: 2001:DB8:1:2::2
+Prefix: /64
+Gateway: 2001:DB8:1:2::1
+Server
+IPv6 Address: 2001:DB8:1:2::3
+Prefix: /64
+Gateway: 2001:DB8:1:2::1
+Step 5 – Block HTTP & HTTPS to Server
+
+Ports:
+
+80 → HTTP
+
+443 → HTTPS
+
+Create ACL on Router1
+
+Router1(config)#ipv6 access-list BLOCK-HTTP
+Router1(config-ipv6-acl)#deny tcp any host 2001:DB8:1:2::3 eq www
+Router1(config-ipv6-acl)#deny tcp any host 2001:DB8:1:2::3 eq 443
+Router1(config-ipv6-acl)#permit ipv6 any any
+Router1(config-ipv6-acl)#exit
+
+Apply ACL
+
+Router1(config)#interface GigabitEthernet0/1
+Router1(config-if)#ipv6 traffic-filter BLOCK-HTTP in
+
+Result:
+
+✅ PCs can ping server
+❌ PCs cannot open HTTP/HTTPS
+
+Step 6 – Block ICMP (Ping) to Server
+
+Create ACL
+
+Router1(config)#ipv6 access-list BLOCK-ICMP
+Router1(config-ipv6-acl)#deny icmp any any
+Router1(config-ipv6-acl)#permit ipv6 any any
+Router1(config-ipv6-acl)#exit
+
+Apply ACL
+
+Router1(config)#interface GigabitEthernet0/1
+Router1(config-if)#ipv6 traffic-filter BLOCK-ICMP out
+
+Result:
+
+❌ PC0 cannot ping server
+❌ PC1 cannot ping server
+❌ PC2 cannot ping server
+
+--------------------------------------------------------------------------------
+
+Practical 6 - Configuring zone based policy firewall (ZPF)
+
+
+part 1 - setup everything and Access R2 using SSH from pc c.
+
+R2#config t
+Enter configuration commands, one per line.  End with CNTL/Z.
+R2(config)#ip domain-name ronak.com
+R2(config)#username ronak privilege 15 secret ronak
+R2(config)#line vty 0 4
+R2(config-line)#login local
+R2(config-line)#transport input ssh
+R2(config-line)#ex
+% Ambiguous command: "ex"
+R2(config-line)#exit
+R2(config)#crypto key generate rsa
+The name for the keys will be: R2.ronak.com
+Choose the size of the key modulus in the range of 360 to 4096 for your
+  General Purpose Keys. Choosing a key modulus greater than 512 may take
+  a few minutes.
+
+How many bits in the modulus [512]: 1024
+
+
+next step From PC-C, open a web browser to the PC-A server.
+
+Part 2: Create the Firewall Zones on R3
+
+R3#show version
+
+R3#config t
+R3(config)#license boot module c1900 technology-package securityk9
+R3(config)#ex
+R3#copy running-config startup-config
+Destination filename [startup-config]? 
+Building configuration...
+[OK]
+R3#reload
+Proceed with reload? [confirm] (//hit enter)
+
+Step 2: Create an internal zone and external zone. Use the zone security command
+
+
+R3(config)#zone security IN-ZONE
+R3(config-sec-zone)#exit
+R3(config)#zone security OUT-ZONE
+R3(config-sec-zone)#exit
+R3(config)#access-list 101
+% Incomplete command.
+R3(config)#access-list 101 permit ip 192.168.3.0 0.0.0.255 any
+R3(config)#this is the pc directyl connected to this R3
+            ^
+% Invalid input detected at '^' marker.
+	
+R3(config)#class-map type inspect match-all IN-NET_CLASS-MAP
+R3(config-cmap)#match access-group 101
+R3(config-cmap)#exit
+R3(config)#policy-map type inspect IN-2-OUT-PMAP
+R3(config-pmap)#class type inspect IN-NET-CLASS-MAP	
+R3(config-pmap-c)#inspect
+%No specific protocol configured in class IN-NET_CLASS-MAP for inspection. All protocols will be inspected
+R3(config-pmap-c)#exit
+R3(config-pmap)#exit
+R3(config)#zone-pair security IN-2-OUT-ZPAIR source IN-ZONE destination OUT-ZONE
+R3(config-sec-zone-pair)#service-policy type inspect IN-2-OUT-PMAP
+R3(config-sec-zone-pair)#exit
+R3(config)#
+R3(config)#interface GigabitEthernet0/0
+R3(config-if)#zone-member security IN-ZONE
+R3(config-if)#exit
+R3(config)#
+R3(config)#interface GigabitEthernet0/0
+R3(config-if)#
+R3(config-if)#exit
+R3(config)#interface Serial0/1/1
+R3(config-if)#zone-member security OUT-ZONE
+R3(config-if)#exit
+R3(config)#
+
+Ping from PC-A -> PC-C, will not work now, before it was working.
+
+  ping 192.168.3.3
+
+Ping from PC-C -> PC-A, will work.  
+
+ping 192.168.1.3
+
+------------------------------------------------------------
+Practical 7 - IPS intrusion prevention system
+
+R1#show version
+
+R1#config t
+R1(config)#license boot module c1900 technology-package securityk9
+R1(config)#ex
+R1#copy running-config startup-config
+Destination filename [startup-config]? 
+Building configuration...
+[OK]
+R1#reload
+Proceed with reload? [confirm] (//hit enter)
+
+
+
+R1>
+R1>en
+R1#config t
+Enter configuration commands, one per line.  End with CNTL/Z.
+R1(config)#ntp server 192.168.1.3
+R1(config)#ntp update-calendar
+R1(config)#service timestamp log datetime msec
+R1(config)#logging host 192.168.1.3
+R1(config)#exit
+R1#
+*Mar 01, 00:01:24.011: SYS-5-CONFIG_I: Configured from console by console
+R1#config t
+Enter configuration commands, one per line.  End with CNTL/Z.
+R1(config)#exit
+R1#
+*Mar 01, 00:01:40.011: SYS-5-CONFIG_I: Configured from console by console
+R1#
+R1#mkdir ipsdir
+Create directory filename [ipsdir]?
+%Error Creating dir flash:ipsdir (Can't create a directory that exists)
+
+R1# for your info: this means that it is already created
+        	
+R1#config t
+Enter configuration commands, one per line.  End with CNTL/Z.
+R1(config)#ip ips config location flash:ipsdir
+R1(config)#ip ips name iosips
+R1(config)#ip ips notify log
+R1(config)#ip ips signature-category
+R1(config-ips-category)#category all
+R1(config-ips-category-action)#retired true
+R1(config-ips-category-action)#exit
+R1(config-ips-category)#category ios_ips basic
+R1(config-ips-category-action)#retired false
+R1(config-ips-category-action)#exit
+R1(config-ips-category)#exit
+Do you want to accept these changes? [confirm]
+Applying Category configuration to signatures ...
+%IPS-6-ENGINE_BUILDING: atomic-ip - 288 signatures - 6 of 13 engines
+%IPS-6-ENGINE_READY: atomic-ip - build time 30 ms - packets for this engine will be scanned
+
+R1(config)#
+R1(config)#
+R1(config)#interface GigabitEthernet0/0
+R1(config-if)#ip ips iosips out
+R1(config-if)#
+*Mar 06, 12:02:54.022:  %IPS-6-ENGINE_BUILDS_STARTED:  12:02:54 UTC Mar 06 2026
+*Mar 06, 12:02:54.022:  %IPS-6-ENGINE_BUILDING: atomic-ip - 3 signatures - 1 of 13 engines
+*Mar 06, 12:02:54.022:  %IPS-6-ENGINE_READY: atomic-ip - build time 8 ms - packets for this engine will be scanned
+*Mar 06, 12:02:54.022:  %IPS-6-ALL_ENGINE_BUILDS_COMPLETE: elapsed time 8 ms
+R1(config-if)#exit
+R1(config)#ip ips signature-definition
+R1(config-sigdef)#signature 2004 0
+R1(config-sigdef-sig)#status
+R1(config-sigdef-sig-status)#retired false
+R1(config-sigdef-sig-status)#enabled true
+R1(config-sigdef-sig-status)#exit
+R1(config-sigdef-sig)#engine
+R1(config-sigdef-sig-engine)#event-action produce-alert
+R1(config-sigdef-sig-engine)#event-action deny-packet-inline
+R1(config-sigdef-sig-engine)#exit
+R1(config-sigdef-sig)#exit
+R1(config-sigdef)#exit
+Do you want to accept these changes? [confirm]
+%IPS-6-ENGINE_BUILDS_STARTED:  
+%IPS-6-ENGINE_BUILDING: atomic-ip - 303 signatures - 3 of 13 engines
+%IPS-6-ENGINE_READY: atomic-ip - build time 480 ms - packets for this engine will be scanned
+%IPS-6-ALL_ENGINE_BUILDS_COMPLETE: elapsed time 648 ms
+
+R1(config)#
+
+result : (PC-2  will ping PC-3, but PC-3 will not be able to ping PC-2)
+
+Also check syslog from the server
+server->services->syslog
+---------------------------------------------------------------
+
+Practical 8 : 
+
+Practical 8 – Spanning Tree + Port Security
+1️⃣ Central Switch (MultilayerSwitch0)
+
+This switch will be Root Primary for VLAN 1.
+
+enable
+configure terminal
+
+hostname Central
+
+spanning-tree vlan 1 root primary
+
+end
+write memory
+2️⃣ Switch 1 (SW-1)
+
+This will be Root Secondary.
+
+enable
+configure terminal
+
+hostname SW-1
+
+spanning-tree vlan 1 root secondary
+
+interface range fa0/23-24
+spanning-tree guard root
+
+end
+write memory
+
+Explanation
+Fa0/23-24 are uplink ports going to central switch.
+
+3️⃣ Switch 2 (SW-2)
+enable
+configure terminal
+
+hostname SW-2
+
+interface range fa0/23-24
+spanning-tree guard root
+
+end
+write memory
+4️⃣ Access Switch A (SW-A)
+
+PCs connected here.
+
+enable
+configure terminal
+
+hostname SW-A
+
+interface range fa0/1-4
+spanning-tree portfast
+
+interface range fa0/1-22
+switchport mode access
+switchport port-security
+switchport port-security maximum 2
+switchport port-security violation shutdown
+switchport port-security mac-address sticky
+
+exit
+
+interface range fa0/5-22
+shutdown
+
+end
+write memory
+5️⃣ Access Switch B (SW-B)
+enable
+configure terminal
+
+hostname SW-B
+
+interface range fa0/1-4
+spanning-tree portfast
+
+interface range fa0/1-22
+switchport mode access
+switchport port-security
+switchport port-security maximum 2
+switchport port-security violation shutdown
+switchport port-security mac-address sticky
+
+exit
+
+interface range fa0/5-22
+shutdown
+
+end
+write memory
+
+
+
+
+How To Test (Important for Viva)
+Check root bridge
+show spanning-tree
+Check port security
+show port-security interface fa0/1
+
+
+
+
+
+
