@@ -320,7 +320,7 @@ Router0(config-if)#ipv6 address FE80::1 link-local
 Router0(config-if)#no shutdown
 Step 3 – Configure Router1 (Center Router)
 
-Serial connection to Router0
+Serial connection to Router1
 
 Router1(config)#interface Serial0/1/0
 Router1(config-if)#ipv6 address 2001:DB8:1:A001::2/64
