@@ -144,6 +144,7 @@ C:\> ssh -l admin2 192.168.1.1
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 Practical 3 : Access Control List
 
+use router 2911 if there are more than 2 gigabyte connections
 
 Router#
 Router#config t
